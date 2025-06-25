@@ -18,24 +18,34 @@ export class LoginComponent {
 
     constructor(private fb: FormBuilder, private router: Router, private http: HttpClient) {
         this.form = this.fb.group({
-            email: ['', [Validators.required, Validators.email]], // Troque username por email
+            email: ['', [Validators.required, Validators.email]], 
             password: ['', Validators.required]
         });
     }
 
     login() {
         if (this.form.valid) {
-            const { email, password } = this.form.value; // Troque username por email
-            this.http.post<any>('http://localhost:8080/auth/login', { email, password }) // Troque username por email
-                .subscribe({
-                    next: (res) => {
-                        localStorage.setItem('token', res.token);
+            const { email, password } = this.form.value;
+            this.http.post(
+                'http://localhost:8080/auth/login',
+                { email, password },
+                { responseType: 'text' } // <-- Aceita texto puro
+            ).subscribe({
+                next: (token: string) => {
+                    console.log('Token recebido:', token);
+                    if (token) {
+                        localStorage.setItem('token', token);
                         this.router.navigate(['/']);
-                    },
-                    error: (err) => {
+                        this.error = null;
+                    } else {
                         this.error = 'E-mail ou senha inválidos';
                     }
-                });
+                },
+                error: (err) => {
+                    console.error('Erro na requisição:', err);
+                    this.error = 'E-mail ou senha inválidos';
+                }
+            });
         }
     }
 }
