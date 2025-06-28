@@ -29,13 +29,13 @@ export class LoginComponent {
             this.http.post(
                 'http://localhost:8080/auth/login',
                 { email, password },
-                { responseType: 'text' } // <-- Aceita texto puro
+                { responseType: 'text' } 
             ).subscribe({
                 next: (token: string) => {
                     console.log('Token recebido:', token);
                     if (token) {
                         localStorage.setItem('token', token);
-                        this.router.navigate(['/']);
+                        this.router.navigate(['/home']); 
                         this.error = null;
                     } else {
                         this.error = 'E-mail ou senha inválidos';
