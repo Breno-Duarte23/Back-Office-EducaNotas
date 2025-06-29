@@ -271,15 +271,15 @@ export class HomeComponent implements OnInit {
             const aluno = {
                 name: this.formAluno.value.nome ?? '',
                 age: +(this.formAluno.value.idade ?? 0),
-                responsible: { id: +(this.formAluno.value.responsavelId ?? 0) },
-                teacher: { id: +(this.formAluno.value.professorId ?? 0) },
-                schoolClass: { id: +(this.formAluno.value.turmaId ?? 0) }
+                responsibleId: +(this.formAluno.value.responsavelId ?? 0),
+                teacherId: +(this.formAluno.value.professorId ?? 0),
+                schoolClassId: +(this.formAluno.value.turmaId ?? 0)
             };
             const token = localStorage.getItem('token');
             this.http.post(
                 'http://localhost:8080/students/register',
                 aluno,
-                { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+                { headers: token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined }
             ).subscribe({
                 next: () => {
                     this.mensagemSucesso = 'Aluno cadastrado com sucesso!';
