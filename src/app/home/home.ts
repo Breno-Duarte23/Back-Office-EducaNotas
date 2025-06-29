@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -203,10 +203,22 @@ export class HomeComponent implements OnInit {
     }
 
     carregarOpcoes() {
-        this.http.get<Option[]>('http://localhost:8080/responsaveis').subscribe(r => this.responsaveis = r);
-        this.http.get<Option[]>('http://localhost:8080/professores').subscribe(p => this.professores = p);
-        this.http.get<Option[]>('http://localhost:8080/estudantes').subscribe(e => this.estudantes = e);
-        this.http.get<Option[]>('http://localhost:8080/turmas').subscribe(t => this.turmas = t);
+        const token = localStorage.getItem('token');
+        const headers = token
+            ? new HttpHeaders({ Authorization: `Bearer ${token}` })
+            : undefined;
+
+        this.http.get<Option[]>('http://localhost:8080/users/responsibles', { headers })
+            .subscribe(r => this.responsaveis = r);
+
+        this.http.get<Option[]>('http://localhost:8080/users/teachers', { headers })
+            .subscribe(p => this.professores = p);
+
+        this.http.get<Option[]>('http://localhost:8080/estudantes', { headers })
+            .subscribe(e => this.estudantes = e);
+
+        this.http.get<Option[]>('http://localhost:8080/turmas', { headers })
+            .subscribe(t => this.turmas = t);
     }
 
     abrirModal(tipo: 'usuario' | 'aluno' | 'turma') {
