@@ -312,25 +312,31 @@ export class HomeComponent implements OnInit {
     }
 
     baixarRelatorioAlunos() {
-        this.http.get('http://localhost:8080/relatorios/alunos', { responseType: 'blob' })
+        const token = localStorage.getItem('token');
+        const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+        this.http.get('http://localhost:8080/reports/students-responsibles', { responseType: 'blob', headers })
             .subscribe({
-                next: (blob) => this.baixarArquivo(blob, 'relatorio-alunos.xlsx'),
+                next: (blob: Blob) => this.baixarArquivo(blob, 'relatorio-alunos.pdf'),
                 error: () => this.mensagemErro = 'Erro ao baixar relatório de alunos.'
             });
     }
 
     baixarRelatorioFuncionarios() {
-        this.http.get('http://localhost:8080/relatorios/funcionarios', { responseType: 'blob' })
+        const token = localStorage.getItem('token');
+        const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+        this.http.get('http://localhost:8080/reports/employees-roles', { responseType: 'blob', headers })
             .subscribe({
-                next: (blob) => this.baixarArquivo(blob, 'relatorio-funcionarios.xlsx'),
+                next: (blob: Blob) => this.baixarArquivo(blob, 'relatorio-funcionarios.pdf'),
                 error: () => this.mensagemErro = 'Erro ao baixar relatório de funcionários.'
             });
     }
 
     baixarRelatorioAlunosPorTurma() {
-        this.http.get('http://localhost:8080/relatorios/alunos-por-turma', { responseType: 'blob' })
+        const token = localStorage.getItem('token');
+        const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+        this.http.get('http://localhost:8080/reports/students-by-class', { responseType: 'blob', headers })
             .subscribe({
-                next: (blob) => this.baixarArquivo(blob, 'relatorio-alunos-por-turma.xlsx'),
+                next: (blob: Blob) => this.baixarArquivo(blob, 'relatorio-alunos-por-turma.pdf'),
                 error: () => this.mensagemErro = 'Erro ao baixar relatório de alunos por turma.'
             });
     }
