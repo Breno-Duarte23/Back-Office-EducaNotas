@@ -108,12 +108,6 @@ interface Option { id: number; name: string; }
                             <option *ngFor="let t of professores" [value]="t.id">{{ t.name }}</option>
                         </select>
                     </label>
-                    <label>
-                        Estudantes:
-                        <select formControlName="estudantesIds" multiple>
-                            <option *ngFor="let s of estudantes" [value]="s.id">{{ s.name }}</option>
-                        </select>
-                    </label>
                     <button type="submit" [disabled]="formTurma.invalid">Salvar</button>
                     <button type="button" (click)="fecharModal()">Cancelar</button>
                 </form>
@@ -193,8 +187,7 @@ export class HomeComponent implements OnInit {
 
         this.formTurma = this.fb.group({
             nome: ['', Validators.required],
-            professorId: ['', Validators.required],
-            estudantesIds: [[], Validators.required]
+            professorId: ['', Validators.required]
         });
     }
 
@@ -214,10 +207,10 @@ export class HomeComponent implements OnInit {
         this.http.get<Option[]>('http://localhost:8080/users/teachers', { headers })
             .subscribe(p => this.professores = p);
 
-        this.http.get<Option[]>('http://localhost:8080/estudantes', { headers })
+        this.http.get<Option[]>('http://localhost:8080/students/all', { headers })
             .subscribe(e => this.estudantes = e);
 
-        this.http.get<Option[]>('http://localhost:8080/turmas', { headers })
+        this.http.get<Option[]>('http://localhost:8080/classes/all', { headers })
             .subscribe(t => this.turmas = t);
     }
 
@@ -258,7 +251,7 @@ export class HomeComponent implements OnInit {
             };
             const token = localStorage.getItem('token'); 
             this.http.post(
-                'http://localhost:8080/auth/register',
+                'http://localhost:8080/users/register',
                 usuario,
                 {
                     headers: token ? { Authorization: `Bearer ${token}` } : {}
@@ -282,14 +275,18 @@ export class HomeComponent implements OnInit {
                 teacher: { id: +(this.formAluno.value.professorId ?? 0) },
                 schoolClass: { id: +(this.formAluno.value.turmaId ?? 0) }
             };
-            this.http.post('http://localhost:8080/alunos', aluno)
-                .subscribe({
-                    next: () => {
-                        this.mensagemSucesso = 'Aluno cadastrado com sucesso!';
-                        this.fecharModal();
-                    },
-                    error: () => this.mensagemErro = 'Erro ao cadastrar aluno.'
-                });
+            const token = localStorage.getItem('token');
+            this.http.post(
+                'http://localhost:8080/students/register',
+                aluno,
+                { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+            ).subscribe({
+                next: () => {
+                    this.mensagemSucesso = 'Aluno cadastrado com sucesso!';
+                    this.fecharModal();
+                },
+                error: () => this.mensagemErro = 'Erro ao cadastrar aluno.'
+            });
         }
     }
 
@@ -297,17 +294,20 @@ export class HomeComponent implements OnInit {
         if (this.formTurma.valid) {
             const turma = {
                 name: this.formTurma.value.nome,
-                teacher: { id: +(this.formTurma.value.professorId ?? 0) },
-                students: ((this.formTurma.value.estudantesIds ?? []) as any[]).map(id => ({ id: +id }))
+                teacherId: +(this.formTurma.value.professorId ?? 0)
             };
-            this.http.post('http://localhost:8080/turmas', turma)
-                .subscribe({
-                    next: () => {
-                        this.mensagemSucesso = 'Turma cadastrada com sucesso!';
-                        this.fecharModal();
-                    },
-                    error: () => this.mensagemErro = 'Erro ao cadastrar turma.'
-                });
+            const token = localStorage.getItem('token');
+            this.http.post(
+                'http://localhost:8080/classes/register',
+                turma,
+                { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+            ).subscribe({
+                next: () => {
+                    this.mensagemSucesso = 'Turma cadastrada com sucesso!';
+                    this.fecharModal();
+                },
+                error: () => this.mensagemErro = 'Erro ao cadastrar turma.'
+            });
         }
     }
 
