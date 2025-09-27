@@ -1,0 +1,32 @@
+<div class="login-container">
+    <form [formGroup]="form" (ngSubmit)="login()">
+        <h1>Bem-vindo ao Centro Educacional Gente Inocente</h1>
+        
+        <div class="input-group">
+            <label>E-mail</label>
+            <div class="filter-wrapper">
+                <input formControlName="email" type="email" />
+            </div>
+            <div *ngIf="form.get('email')?.invalid && form.get('email')?.touched" class="error-message">
+                Digite um email válido
+            </div>
+            
+        </div>
+
+        <div class="input-group">
+            <label>Senha</label>
+            <div class="filter-wrapper">
+                <input [type]="passwordType" formControlName="password" />
+                <span class="toggle-password" (click)="togglePasswordVisibility()">
+                    <i class="fas" [ngClass]="{'fa-eye': passwordType === 'password', 'fa-eye-slash': passwordType === 'text'}"></i>
+                </span>
+            </div>
+            <div *ngIf="form.get('password')?.invalid && form.get('password')?.touched" class="error-message">
+                Digite uma senha válida
+            </div>
+        </div>
+
+        <button type="submit">Entrar</button>
+        <!-- <div *ngIf="error" class="error">{{ error }}</div> -->
+    </form>
+</div>
