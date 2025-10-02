@@ -34,42 +34,45 @@ export class LoginComponent {
 
   }
 
-  // login() {
-  //     if (this.form.valid) {
-  //         const { email, password } = this.form.value;
-  //         this.http.post(
-  //             'http://localhost:8080/auth/login',
-  //             { email, password },
-  //             { responseType: 'text' } 
-  //         ).subscribe({
-  //             next: (token: string) => {
-  //                 console.log('Token recebido:', token);
-  //                 if (token) {
-  //                     localStorage.setItem('token', token);
-  //                     this.router.navigate(['/home']); 
-  //                     this.error = null;
-  //                 } else {
-  //                     this.openSnackBar('E-mail ou senha inválidos.');
-  //                 }
-  //             },
-  //             error: (err) => {
-  //                 console.error('Erro na requisição:', err);
-  //                 this.error = 'E-mail ou senha inválidos';
-  //             }
-  //         });
-  //     }
-  // }
-
   login() {
     if (this.form.valid) {
-      const { email, password } = this.form.value;
-      if (email === 'test@test.com' && password === '123') {
-        this.router.navigate(['/home']);
-      } else {
-        this.openSnackBar('E-mail ou senha inválidos.');
-      }
+        const { email, password } = this.form.value;
+        this.http.post(
+            'http://localhost:8080/auth/login',
+            { email, password },
+            { responseType: 'text' }
+        ).subscribe({
+            next: (token: string) => {
+                console.log('Token recebido:', token);
+                localStorage.setItem('token', token);
+                this.router.navigate(['/home']);
+                this.error = null;
+            },
+            error: (err) => {
+                console.error('Erro na requisição:', err);
+
+                if (err.status === 401 || err.status === 400) {
+                    this.openSnackBar('E-mail ou senha inválidos.');
+                    this.error = 'E-mail ou senha inválidos';
+                } else {
+                    this.openSnackBar('Ocorreu um erro ao tentar conectar. Tente novamente.');
+                    this.error = 'Erro na conexão';
+                }
+            }
+        });
     }
-  }
+}
+
+  // login() {
+  //   if (this.form.valid) {
+  //     const { email, password } = this.form.value;
+  //     if (email === 'test@test.com' && password === '123') {
+  //       this.router.navigate(['/home']);
+  //     } else {
+  //       this.openSnackBar('E-mail ou senha inválidos.');
+  //     }
+  //   }
+  // }
 
   togglePasswordVisibility() {
     this.passwordType = this.passwordType === 'password' ? 'text' : 'password';
