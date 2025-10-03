@@ -1,0 +1,106 @@
+<div class="home-container">
+        <h1>Bem-vindo!</h1>
+        <div class="actions">
+            <button (click)="abrirModal('usuario')">Cadastrar Usuário</button>
+            <button (click)="abrirModal('aluno')">Cadastrar Aluno</button>
+            <button (click)="abrirModal('turma')">Cadastrar turma</button>
+            <button (click)="baixarRelatorioAlunos()">Baixar relatório de alunos e seus responsáveis</button>
+            <button (click)="baixarRelatorioFuncionarios()">Baixar relatório de funcionários e suas funções</button>
+            <button (click)="baixarRelatorioAlunosPorTurma()">Baixar relatório de alunos por turma</button>
+        </div>
+        <div *ngIf="mensagemErro" class="mensagem erro">{{ mensagemErro }}</div>
+        <div *ngIf="mensagemSucesso" class="mensagem sucesso">{{ mensagemSucesso }}</div>
+
+        <!-- Modal de Cadastro de Usuário -->
+        <div class="modal-backdrop" *ngIf="modalAberto === 'usuario'">
+            <div class="modal">
+                <h2>Cadastrar Usuário</h2>
+                <form [formGroup]="formUsuario" (ngSubmit)="enviarCadastroUsuario()">
+                    <label>
+                        Nome:
+                        <input formControlName="name" />
+                    </label>
+                    <label>
+                        E-mail:
+                        <input formControlName="email" type="email" />
+                    </label>
+                    <label>
+                        Senha:
+                        <input formControlName="password" type="password" />
+                    </label>
+                    <label>
+                        Confirmar Senha:
+                        <input formControlName="confirmPassword" type="password" />
+                    </label>
+                    <label>
+                        Perfil:
+                        <select formControlName="role">
+                            <option *ngFor="let r of roles" [value]="r.value">{{ r.label }}</option>
+                        </select>
+                    </label>
+                    <div *ngIf="mensagemErro" class="mensagem erro">{{ mensagemErro }}</div>
+                    <div *ngIf="mensagemSucesso" class="mensagem sucesso">{{ mensagemSucesso }}</div>
+                    <button type="submit" [disabled]="formUsuario.invalid">Salvar</button>
+                    <button type="button" (click)="fecharModal()">Cancelar</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal de Cadastro de Aluno -->
+        <div class="modal-backdrop" *ngIf="modalAberto === 'aluno'">
+            <div class="modal">
+                <h2>Cadastrar Aluno</h2>
+                <form [formGroup]="formAluno" (ngSubmit)="enviarCadastroAluno()">
+                    <label>
+                        Nome:
+                        <input formControlName="nome" />
+                    </label>
+                    <label>
+                        Idade:
+                        <input formControlName="idade" type="number" />
+                    </label>
+                    <label>
+                        Responsável:
+                        <select formControlName="responsavelId">
+                            <option *ngFor="let r of responsaveis" [value]="r.id">{{ r.name }}</option>
+                        </select>
+                    </label>
+                    <label>
+                        Professor:
+                        <select formControlName="professorId">
+                            <option *ngFor="let t of professores" [value]="t.id">{{ t.name }}</option>
+                        </select>
+                    </label>
+                    <label>
+                        Turma:
+                        <select formControlName="turmaId">
+                            <option *ngFor="let t of turmas" [value]="t.id">{{ t.name }}</option>
+                        </select>
+                    </label>
+                    <button type="submit" [disabled]="formAluno.invalid">Salvar</button>
+                    <button type="button" (click)="fecharModal()">Cancelar</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal de Cadastro de Turma -->
+        <div class="modal-backdrop" *ngIf="modalAberto === 'turma'">
+            <div class="modal">
+                <h2>Cadastrar Turma</h2>
+                <form [formGroup]="formTurma" (ngSubmit)="enviarCadastroTurma()">
+                    <label>
+                        Nome da Turma:
+                        <input formControlName="nome" />
+                    </label>
+                    <label>
+                        Professor:
+                        <select formControlName="professorId">
+                            <option *ngFor="let t of professores" [value]="t.id">{{ t.name }}</option>
+                        </select>
+                    </label>
+                    <button type="submit" [disabled]="formTurma.invalid">Salvar</button>
+                    <button type="button" (click)="fecharModal()">Cancelar</button>
+                </form>
+            </div>
+        </div>
+    </div>
