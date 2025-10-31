@@ -1,0 +1,12 @@
+# Normalize text files (aplicar comportamento consistente de EOL)
+* text=auto
+
+# Keep binaries as binary
+*.png -text
+*.jpg -text
+*.jpeg -text
+*.gif -text
+*.lock -text
+
+# Don't normalize node_modules (evita churn)
+node_modules/** -text

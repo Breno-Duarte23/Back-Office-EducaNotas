@@ -1,25 +1,25 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { HttpClient, HttpHeaders, HttpClientModule } from '@angular/common/http';
 
 interface Option { id: number; name: string; }
 
 @Component({
     selector: 'app-home',
-    templateUrl: `./home.component.html`,
-    styleUrls: [`./home.component.scss`],
+    templateUrl: './home.component.html',
+    styleUrls: ['./home.component.scss'],
     standalone: true,
-    imports: [ReactiveFormsModule, CommonModule]
+    imports: [CommonModule, ReactiveFormsModule, HttpClientModule]
 })
 export class HomeComponent implements OnInit {
     mensagemErro: string | null = null;
     mensagemSucesso: string | null = null;
     modalAberto: 'usuario' | 'aluno' | 'turma' | null = null;
 
-    formUsuario;
-    formAluno;
-    formTurma;
+    formUsuario: any;
+    formAluno: any;
+    formTurma: any;
 
     responsaveis: Option[] = [];
     professores: Option[] = [];
@@ -34,6 +34,7 @@ export class HomeComponent implements OnInit {
     ];
 
     constructor(private http: HttpClient, private fb: FormBuilder) {
+        // Inicializa os forms no construtor (fb já está disponível)
         this.formUsuario = this.fb.group({
             name: ['', Validators.required],
             email: ['', [Validators.required, Validators.email]],
@@ -56,41 +57,40 @@ export class HomeComponent implements OnInit {
         });
     }
 
-    ngOnInit() {
+    ngOnInit(): void {
         this.carregarOpcoes();
     }
 
-    carregarOpcoes() {
-        const token = localStorage.getItem('token');
-        const headers = token
-            ? new HttpHeaders({ Authorization: `Bearer ${token}` })
-            : undefined;
-
-        this.http.get<Option[]>('http://localhost:8080/users/responsibles', { headers })
-            .subscribe(r => this.responsaveis = r);
-
-        this.http.get<Option[]>('http://localhost:8080/users/teachers', { headers })
-            .subscribe(p => this.professores = p);
-
-        this.http.get<Option[]>('http://localhost:8080/students/all', { headers })
-            .subscribe(e => this.estudantes = e);
-
-        this.http.get<Option[]>('http://localhost:8080/classes/all', { headers })
-            .subscribe(t => this.turmas = t);
+    carregarOpcoes(): void {
+        this.http.get<Option[]>('http://localhost:8080/users/responsibles', { withCredentials: true })
+            .subscribe(r => this.responsaveis = r, () => { });
+        this.http.get<Option[]>('http://localhost:8080/users/teachers', { withCredentials: true })
+            .subscribe(r => this.professores = r, () => { });
+        this.http.get<Option[]>('http://localhost:8080/students/all', { withCredentials: true })
+            .subscribe(r => this.estudantes = r, () => { });
+        this.http.get<Option[]>('http://localhost:8080/classes/all', { withCredentials: true })
+            .subscribe(r => this.turmas = r, () => { });
     }
 
     abrirModal(tipo: 'usuario' | 'aluno' | 'turma') {
         this.modalAberto = tipo;
         this.mensagemErro = null;
         this.mensagemSucesso = null;
-        this.formUsuario?.reset();
-        this.formAluno?.reset();
-        this.formTurma?.reset();
+        this.formUsuario.reset();
+        this.formAluno.reset();
+        this.formTurma.reset();
         this.carregarOpcoes();
     }
 
     fecharModal() {
         this.modalAberto = null;
+    }
+
+    private validarSenha(senha: string): string | null {
+        const erros: string[] = [];
+        if (!/[A-Z]/.test(senha)) erros.push('pelo menos uma letra maiúscula');
+        if (!/[!@#$%^&*]/.test(senha)) erros.push('pelo menos um caractere especial');
+        return erros.length ? 'A senha deve conter ' + erros.join(' e ') + '.' : null;
     }
 
     enviarCadastroUsuario() {
@@ -114,12 +114,12 @@ export class HomeComponent implements OnInit {
                 confirmPassword: this.formUsuario.value.confirmPassword ?? '',
                 role: this.formUsuario.value.role ?? ''
             };
-            const token = localStorage.getItem('token'); 
+            const token = localStorage.getItem('token');
             this.http.post(
                 'http://localhost:8080/users/register',
                 usuario,
                 {
-                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                    headers: token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : {}
                 }
             ).subscribe({
                 next: () => {
@@ -214,18 +214,5 @@ export class HomeComponent implements OnInit {
         a.click();
         window.URL.revokeObjectURL(url);
         this.mensagemSucesso = 'Download iniciado!';
-    }
-
-    private validarSenha(senha: string): string | null {
-        const erros: string[] = [];
-        if (!/[A-Z]/.test(senha)) {
-            erros.push('pelo menos uma letra maiúscula');
-        }
-        if (!/[!@#$%^&*]/.test(senha)) {
-            erros.push('pelo menos um caractere especial');
-        }
-        return erros.length > 0
-            ? 'A senha deve conter ' + erros.join(' e ') + '.'
-            : null;
     }
 }
