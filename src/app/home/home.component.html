@@ -103,4 +103,38 @@
                 </form>
             </div>
         </div>
+
+        <!-- Botão Calendário de Feriados -->
+        <button (click)="abrirModal('calendario')" class="btn-calendario">
+          📅 Ver Feriados
+        </button>
+
+        <!-- Modal Calendário -->
+        <div *ngIf="modalAberto === 'calendario'" class="modal-overlay" (click)="fecharModal()">
+          <div class="modal" (click)="$event.stopPropagation()">
+            <h2>Calendário de Feriados - {{ anoSelecionado }}</h2>
+            
+            <div class="controles-ano">
+              <button (click)="mudarAno(-1)">◀ Ano Anterior</button>
+              <span>{{ anoSelecionado }}</span>
+              <button (click)="mudarAno(1)">Próximo Ano ▶</button>
+            </div>
+
+            <div *ngIf="carregandoFeriados" class="loading">Carregando feriados...</div>
+
+            <div *ngIf="!carregandoFeriados && feriados.length > 0" class="lista-feriados">
+              <div *ngFor="let feriado of feriados" class="feriado-item">
+                <div class="feriado-data">{{ formatarData(feriado) }}</div>
+                <div class="feriado-nome">{{ feriado.name }}</div>
+                <div class="feriado-descricao">{{ feriado.description }}</div>
+              </div>
+            </div>
+
+            <div *ngIf="!carregandoFeriados && feriados.length === 0" class="sem-feriados">
+              Nenhum feriado encontrado para {{ anoSelecionado }}.
+            </div>
+
+            <button (click)="fecharModal()" class="btn-fechar">Fechar</button>
+          </div>
+        </div>
     </div>

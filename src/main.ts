@@ -2,12 +2,11 @@ import '@angular/compiler';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideAnimations } from '@angular/platform-browser/animations';
-import { AppComponent } from './app/app.component';
-import { routes } from './app/app.routes';
-import { withCredentialsInterceptor } from './app/interceptors/with-credentials.interceptor';
+import { credentialsInterceptor } from './app/interceptors/credentials.interceptor';
 import { xsrfInterceptor } from './app/interceptors/xsrf.interceptor';
 import { errorInterceptor } from './app/interceptors/error.interceptor';
+import { AppComponent } from './app/app.component';
+import { routes } from './app/app.routes';
 import { enableProdMode } from '@angular/core';
 import { environment } from './environments/environment';
 
@@ -20,11 +19,11 @@ bootstrapApplication(AppComponent, {
     provideRouter(routes),
     provideHttpClient(
       withInterceptors([
-        withCredentialsInterceptor,
-        xsrfInterceptor,
-        errorInterceptor
+        credentialsInterceptor,  // ✅ 1º - adiciona withCredentials
+        xsrfInterceptor,         // ✅ 2º - adiciona X-XSRF-TOKEN se necessário
+        errorInterceptor         // ✅ 3º - trata erros globalmente
       ])
     ),
-    provideAnimations()
+    // ...outros providers existentes...
   ]
 }).catch(err => console.error(err));

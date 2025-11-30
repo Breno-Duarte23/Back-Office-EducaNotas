@@ -2,8 +2,23 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient, HttpHeaders, HttpClientModule } from '@angular/common/http';
+import { CalendarService } from '../services/calendar.service';
 
 interface Option { id: number; name: string; }
+
+interface Holiday {
+  name: string;
+  description: string;
+  date: {
+    iso: string;
+    datetime: {
+      year: number;
+      month: number;
+      day: number;
+    };
+  };
+  type: string[];
+}
 
 @Component({
     selector: 'app-home',
@@ -15,7 +30,7 @@ interface Option { id: number; name: string; }
 export class HomeComponent implements OnInit {
     mensagemErro: string | null = null;
     mensagemSucesso: string | null = null;
-    modalAberto: 'usuario' | 'aluno' | 'turma' | null = null;
+    modalAberto: 'usuario' | 'aluno' | 'turma' | 'calendario' | null = null;
 
     formUsuario: any;
     formAluno: any;
@@ -26,6 +41,11 @@ export class HomeComponent implements OnInit {
     estudantes: Option[] = [];
     turmas: Option[] = [];
 
+    // Calendário/Feriados
+    feriados: Holiday[] = [];
+    anoSelecionado: number = new Date().getFullYear();
+    carregandoFeriados: boolean = false;
+
     roles = [
         { value: 'ADMIN', label: 'Administrador' },
         { value: 'EMPLOYEE', label: 'Funcionário' },
@@ -33,8 +53,11 @@ export class HomeComponent implements OnInit {
         { value: 'RESPONSIBLE', label: 'Responsável' }
     ];
 
-    constructor(private http: HttpClient, private fb: FormBuilder) {
-        // Inicializa os forms no construtor (fb já está disponível)
+    constructor(
+        private http: HttpClient, 
+        private fb: FormBuilder,
+        private calendarService: CalendarService
+    ) {
         this.formUsuario = this.fb.group({
             name: ['', Validators.required],
             email: ['', [Validators.required, Validators.email]],
@@ -72,18 +95,50 @@ export class HomeComponent implements OnInit {
             .subscribe(r => this.turmas = r, () => { });
     }
 
-    abrirModal(tipo: 'usuario' | 'aluno' | 'turma') {
+    abrirModal(tipo: 'usuario' | 'aluno' | 'turma' | 'calendario') {
         this.modalAberto = tipo;
         this.mensagemErro = null;
         this.mensagemSucesso = null;
         this.formUsuario.reset();
         this.formAluno.reset();
         this.formTurma.reset();
-        this.carregarOpcoes();
+        
+        if (tipo === 'calendario') {
+            this.carregarFeriados();
+        } else {
+            this.carregarOpcoes();
+        }
     }
 
     fecharModal() {
         this.modalAberto = null;
+        this.feriados = [];
+    }
+
+    carregarFeriados(): void {
+        this.carregandoFeriados = true;
+        this.calendarService.getFeriados(this.anoSelecionado).subscribe({
+            next: (response) => {
+                this.feriados = response.response.holidays.filter(h => 
+                    h.type.includes('National holiday') || h.type.includes('Federal holiday')
+                );
+                this.carregandoFeriados = false;
+            },
+            error: () => {
+                this.mensagemErro = 'Erro ao carregar feriados.';
+                this.carregandoFeriados = false;
+            }
+        });
+    }
+
+    mudarAno(direcao: number): void {
+        this.anoSelecionado += direcao;
+        this.carregarFeriados();
+    }
+
+    formatarData(holiday: Holiday): string {
+        const { day, month, year } = holiday.date.datetime;
+        return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
     }
 
     private validarSenha(senha: string): string | null {
@@ -114,20 +169,14 @@ export class HomeComponent implements OnInit {
                 confirmPassword: this.formUsuario.value.confirmPassword ?? '',
                 role: this.formUsuario.value.role ?? ''
             };
-            const token = localStorage.getItem('token');
-            this.http.post(
-                'http://localhost:8080/users/register',
-                usuario,
-                {
-                    headers: token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : {}
-                }
-            ).subscribe({
-                next: () => {
-                    this.mensagemSucesso = 'Usuário cadastrado com sucesso!';
-                    this.fecharModal();
-                },
-                error: (err) => this.mensagemErro = err?.error || 'Erro ao cadastrar usuário.'
-            });
+            this.http.post('http://localhost:8080/users/register', usuario)
+                .subscribe({
+                    next: () => {
+                        this.mensagemSucesso = 'Usuário cadastrado com sucesso!';
+                        this.fecharModal();
+                    },
+                    error: (err) => this.mensagemErro = err?.error || 'Erro ao cadastrar usuário.'
+                });
         }
     }
 
@@ -140,18 +189,14 @@ export class HomeComponent implements OnInit {
                 teacherId: +(this.formAluno.value.professorId ?? 0),
                 schoolClassId: +(this.formAluno.value.turmaId ?? 0)
             };
-            const token = localStorage.getItem('token');
-            this.http.post(
-                'http://localhost:8080/students/register',
-                aluno,
-                { headers: token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined }
-            ).subscribe({
-                next: () => {
-                    this.mensagemSucesso = 'Aluno cadastrado com sucesso!';
-                    this.fecharModal();
-                },
-                error: () => this.mensagemErro = 'Erro ao cadastrar aluno.'
-            });
+            this.http.post('http://localhost:8080/students/register', aluno)
+                .subscribe({
+                    next: () => {
+                        this.mensagemSucesso = 'Aluno cadastrado com sucesso!';
+                        this.fecharModal();
+                    },
+                    error: () => this.mensagemErro = 'Erro ao cadastrar aluno.'
+                });
         }
     }
 
@@ -161,49 +206,53 @@ export class HomeComponent implements OnInit {
                 name: this.formTurma.value.nome,
                 teacherId: +(this.formTurma.value.professorId ?? 0)
             };
-            const token = localStorage.getItem('token');
-            this.http.post(
-                'http://localhost:8080/classes/register',
-                turma,
-                { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-            ).subscribe({
-                next: () => {
-                    this.mensagemSucesso = 'Turma cadastrada com sucesso!';
-                    this.fecharModal();
-                },
-                error: () => this.mensagemErro = 'Erro ao cadastrar turma.'
-            });
+            this.http.post('http://localhost:8080/classes/register', turma)
+                .subscribe({
+                    next: () => {
+                        this.mensagemSucesso = 'Turma cadastrada com sucesso!';
+                        this.fecharModal();
+                    },
+                    error: () => this.mensagemErro = 'Erro ao cadastrar turma.'
+                });
         }
     }
 
-    baixarRelatorioAlunos() {
-        const token = localStorage.getItem('token');
-        const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-        this.http.get('http://localhost:8080/reports/students-responsibles', { responseType: 'blob', headers })
-            .subscribe({
-                next: (blob: Blob) => this.baixarArquivo(blob, 'relatorio-alunos.pdf'),
-                error: () => this.mensagemErro = 'Erro ao baixar relatório de alunos.'
-            });
+    baixarRelatorioAlunos(): void {
+        this.http.get('http://localhost:8080/reports/students-responsibles', { 
+            responseType: 'blob',
+            withCredentials: true
+        }).subscribe({
+            next: (blob: Blob) => this.baixarArquivo(blob, 'relatorio-alunos.pdf'),
+            error: () => this.mensagemErro = 'Erro ao baixar relatório de alunos.'
+        });
     }
 
-    baixarRelatorioFuncionarios() {
-        const token = localStorage.getItem('token');
-        const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-        this.http.get('http://localhost:8080/reports/employees-roles', { responseType: 'blob', headers })
-            .subscribe({
-                next: (blob: Blob) => this.baixarArquivo(blob, 'relatorio-funcionarios.pdf'),
-                error: () => this.mensagemErro = 'Erro ao baixar relatório de funcionários.'
-            });
+    baixarRelatorioFuncionarios(): void {
+        this.http.get('http://localhost:8080/reports/employees-roles', { 
+            responseType: 'blob',
+            withCredentials: true
+        }).subscribe({
+            next: (blob: Blob) => this.baixarArquivo(blob, 'relatorio-funcionarios.pdf'),
+            error: () => this.mensagemErro = 'Erro ao baixar relatório de funcionários.'
+        });
     }
 
-    baixarRelatorioAlunosPorTurma() {
-        const token = localStorage.getItem('token');
-        const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-        this.http.get('http://localhost:8080/reports/students-by-class', { responseType: 'blob', headers })
-            .subscribe({
-                next: (blob: Blob) => this.baixarArquivo(blob, 'relatorio-alunos-por-turma.pdf'),
-                error: () => this.mensagemErro = 'Erro ao baixar relatório de alunos por turma.'
-            });
+    baixarRelatorioAlunosPorTurma(): void {
+        console.debug('[HomeComponent] Baixando relatório de alunos por turma');
+        
+        this.http.get('http://localhost:8080/reports/students-by-class', {
+            responseType: 'blob',
+            withCredentials: true
+        }).subscribe({
+            next: (blob) => {
+                console.debug('[HomeComponent] Relatório recebido:', blob);
+                this.baixarArquivo(blob, 'relatorio-alunos-por-turma.pdf');
+            },
+            error: (err) => {
+                console.error('[HomeComponent] Erro ao baixar relatório:', err);
+                this.mensagemErro = 'Erro ao baixar relatório de alunos por turma.';
+            }
+        });
     }
 
     private baixarArquivo(blob: Blob, nomeArquivo: string) {

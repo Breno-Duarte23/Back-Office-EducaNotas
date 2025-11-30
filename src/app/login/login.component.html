@@ -1,5 +1,5 @@
 <div class="login-container">
-    <form [formGroup]="form" (ngSubmit)="login()">
+    <form [formGroup]="form" (ngSubmit)="login($event)" novalidate>
         <h1>Bem-vindo ao Centro Educacional Gente Inocente</h1>
         
         <div class="input-group">
